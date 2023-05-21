@@ -132,6 +132,7 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
 
     keep_selection := false;
     enabled_whole_words := false;
+    reset_dynamic_expansion := true;
 
     if action == {
         // General actions (which are not associated with any cursor)
@@ -218,6 +219,8 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
         case .delete_to_start_of_line;          delete_to_start_of_line             (editor, buffer);
         case .delete_to_end_of_line;            delete_to_end_of_line               (editor, buffer);
 
+        case .dynamic_expand;                   try_expand_current_word             (editor, buffer); reset_dynamic_expansion = false;
+
         case;                                   return false;
     }
 
@@ -239,6 +242,8 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
     if editor.cursor_moved && !enabled_whole_words then editor.search_whole_words = false;
     if editor.cursor_moved then editor.refresh_highlights = true;  // update or remove highlights
     if editor.cursor_moved then cursors_start_blinking();
+
+    if reset_dynamic_expansion  reset_dynamic_expansion_state(*dynamic_expansion_state);
 
     return true;
 }
@@ -2419,3 +2424,5 @@ CURSOR_BLINK_SPEED_MS   :: 500;
 CURSOR_BLINK_TIMEOUT_MS :: 5_000;  // when to stop blinking on inaction
 
 #import "Clipboard";
+
+#load "dynamic_expand.jai";
