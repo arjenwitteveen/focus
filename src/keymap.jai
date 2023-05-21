@@ -328,6 +328,7 @@ ACTIONS_EDITORS :: #run arrays_concat(ACTIONS_COMMON, string.[
     "create_new_file",
     "create_new_file_on_the_side",
     "dynamic_expand",
+    "indent_or_expand",
 ]);
 
 ACTIONS_OPEN_FILE_DIALOG :: #run arrays_concat(ACTIONS_COMMON, string.[

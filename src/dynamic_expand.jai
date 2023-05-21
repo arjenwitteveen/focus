@@ -6,19 +6,12 @@ Dynamic_Expansion_State :: struct {
     last_selected_match_index := -1;
     search_buffer_before_word: string;
     search_buffer_after_word: string;
+    should_reset: bool;
 }
 
 dynamic_expansion_state: Dynamic_Expansion_State;
 
 #scope_file
-
-is_expansion_word_char :: (ch: u32) -> bool {
-    return
-        (#char "a" <= ch && ch <= #char "z") ||
-        (#char "A" <= ch && ch <= #char "Z") ||
-        (ch == #char "_" && context.underscore_is_part_of_word) ||
-        (#char "0" <= ch && ch <= #char "9");
-}
 
 maybe_add_match :: (using state: *Dynamic_Expansion_State, match: string) -> bool {
     _, found := table_find(*matches_table, match);
@@ -127,12 +120,13 @@ get_next_expansion :: (using state: *Dynamic_Expansion_State) -> string {
 
 #scope_export
 
-try_expand_current_word :: (editor: *Editor, buffer: *Buffer) {
+try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
+    // @TODO: What to do for multiple cursors?
     cursor := editor.cursors.data;
 
     if !dynamic_expansion_state.prefix {
-        if has_selection(cursor) || cursor.pos == 0  return;
-        if !is_expansion_word_char(get_char_at_offset(buffer, cursor.pos - 1))  return;
+        if has_selection(cursor) || cursor.pos == 0  return false;
+        if !is_expansion_word_char(get_char_at_offset(buffer, cursor.pos - 1))  return false;
 ("Initializing dynamic_expansion_state.\n");
 
         reset_dynamic_expansion_state(*dynamic_expansion_state);
@@ -153,6 +147,8 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) {
         dynamic_expansion_state.search_buffer_after_word  = get_range_as_string(buffer, .{ start = word_end, end = xx (buffer.bytes.count - 1) });
     }
 
+    dynamic_expansion_state.should_reset = false;
+
     expansion := get_next_expansion(*dynamic_expansion_state);
 
     if expansion {
@@ -171,6 +167,8 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) {
     put_cursor_in_valid_spot(cursor, buffer);
 
     organise_cursors(editor);
+
+    return true;
 }
 
 reset_dynamic_expansion_state :: (using state: *Dynamic_Expansion_State) {
@@ -183,4 +181,14 @@ reset_dynamic_expansion_state :: (using state: *Dynamic_Expansion_State) {
     last_selected_match_index = 0;
     search_buffer_before_word = "";
     search_buffer_after_word = "";
+    should_reset = false;
+    print("Reset expansion state.\n");
+}
+
+is_expansion_word_char :: (ch: u32) -> bool {
+    return
+        (#char "a" <= ch && ch <= #char "z") ||
+        (#char "A" <= ch && ch <= #char "Z") ||
+        (ch == #char "_" && context.underscore_is_part_of_word) ||
+        (#char "0" <= ch && ch <= #char "9");
 }

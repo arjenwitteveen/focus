@@ -6,6 +6,9 @@ editors_handle_event :: (event: Input.Event) -> handled: bool {
     context.current_editor_id = editors.active;
     defer context.current_editor_id = -1;
 
+    dynamic_expansion_state.should_reset = true;
+    defer if dynamic_expansion_state.should_reset  reset_dynamic_expansion_state(*dynamic_expansion_state);
+
     if event.type == {
         case .KEYBOARD;
             if event.key_pressed {
@@ -35,6 +38,8 @@ editors_handle_event :: (event: Input.Event) -> handled: bool {
                 return true;
             }
     }
+
+    dynamic_expansion_state.should_reset = false;
 
     return false;
 }
@@ -219,7 +224,8 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
         case .delete_to_start_of_line;          delete_to_start_of_line             (editor, buffer);
         case .delete_to_end_of_line;            delete_to_end_of_line               (editor, buffer);
 
-        case .dynamic_expand;                   try_expand_current_word             (editor, buffer); reset_dynamic_expansion = false;
+        case .dynamic_expand;                   try_expand_current_word             (editor, buffer);
+        case .indent_or_expand;                 indent_or_expand                    (editor, buffer);
 
         case;                                   return false;
     }
@@ -1849,6 +1855,19 @@ unindent_lines :: (editor: *Editor, buffer: *Buffer) {
     for * cursor : editor.cursors { cursor.col_wanted = -1; }
 
     editor.cursor_moved = true;
+}
+
+indent_or_expand :: (editor: *Editor, buffer: *Buffer) {
+    // @TODO: What to do for multiple cursors?
+    cursor := editor.cursors.data;
+
+    if cursor.pos == 0 || !is_expansion_word_char(get_char_at_offset(buffer, cursor.pos - 1)) {
+        indent_or_tab(editor, buffer);
+        // or indent_lines(editor, buffer); ?
+        return;
+    }
+
+    try_expand_current_word(editor, buffer);
 }
 
 remove_additional_cursors :: (editor: *Editor) {
