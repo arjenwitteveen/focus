@@ -138,6 +138,7 @@ commands := #run Command.[
     .{ .show_open_file_dialog_in_search_mode,               "Open File By Name",                  0, .None },
     .{ .show_open_file_dialog_in_navigate_mode,             "Navigate To File",                   0, .None },
     .{ .show_open_file_dialog_in_navigate_mode_from_root,   "Navigate To File From Root",         0, .None },
+    .{ .show_open_file_dialog_in_open_buffers_mode,         "Navigate Open Buffers",              0, .None },
 
     .{ .switch_to_project,                                  "Switch To Project",                  0, .None },
     .{ .open_projects_directory,                            "Open Projects Directory",            0, .None },

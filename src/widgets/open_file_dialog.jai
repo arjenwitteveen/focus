@@ -12,13 +12,13 @@ open_file_dialog_handle_event :: (event: Input.Event) -> handled: bool {
             case .open_directory;           open_file_dialog_open_entry(entries.selected, .in_place, folder_only = true, maybe_open_root_dir = event.key_code == #char "/");     return true;
             case .pop_directory;            if pop_directory() return true;
 
-            case .toggle_expand;            toggle_expand();                    return true;
-            case .move_up;                  move_cursor(-1, wrap = true);       return true;
-            case .move_down;                move_cursor( 1, wrap = true);       return true;
-            case .move_up_fast;             move_cursor(-5);                    return true;
-            case .move_down_fast;           move_cursor( 5);                    return true;
-            case .move_up_one_page;         move_cursor(-entries.per_page);     return true;
-            case .move_down_one_page;       move_cursor( entries.per_page);     return true;
+            case .toggle_expand;            toggle_expand();                      return true;
+            case .move_up;                  move_cursor(-1, wrap = true);         return true;
+            case .move_down;                move_cursor( 1, wrap = true);         return true;
+            case .move_up_fast;             move_cursor(-5);                      return true;
+            case .move_down_fast;           move_cursor( 5);                      return true;
+            case .move_up_one_page;         move_cursor(-entries.per_page);       return true;
+            case .move_down_one_page;       move_cursor( entries.per_page);       return true;
         }
 
         handled := maybe_handle_text_input_event(*input, event);
@@ -304,6 +304,7 @@ refresh_entries :: (clear_input := true) {
                 }
             }
 
+        case .open_buffers; #through;
         case .search;
             // @MEMORY SAFETY: if we ever delete buffers from open_buffers and free memory, this will have to copy everything!
             num_entries := 0;
@@ -317,6 +318,8 @@ refresh_entries :: (clear_input := true) {
                                                                  // we haven't deleted ourselves?
                                                                  // Alternatively, if there's an editor for a deleted buffer we probably
                                                                  // still want to see it here
+
+                if mode == .open_buffers && open_editors.count > 0 && buffer.num_editors_open == 0  continue;
 
                 buffer_name := get_buffer_name(buffer);
                 name_score, name_highlights := fuzzy_match(buffer_name, filter_chars);
@@ -465,6 +468,7 @@ Open_File_Dialog :: struct {
     Mode :: enum {
         search;
         navigate;
+        open_buffers;
     }
 }
 

@@ -1237,8 +1237,9 @@ draw_open_file_dialog :: () {
     input_rect = shrink(input_rect, margin);
     input_id := get_ui_id_from_loc(parent_id = ui_id);
 
-    if mode == .search {
+    if mode == .search || mode == .open_buffers {
         label := ifx finder.initted then " Search files by name" else " Still scanning the workspace. Please wait...";
+    
         draw_text_input(*open_file_dialog.input, input_rect, ui_id = input_id, active = true, label = label);
         if !finder.initted then redraw_requested = true;  // draw the progress bar and update as soon as we're done
 
@@ -1385,7 +1386,7 @@ draw_open_file_dialog :: () {
             }
 
             // Maybe draw project boundary
-            if mode == .search {
+            if mode == .search || mode == .open_buffers {
                 if project_dir_id < 0 then project_dir_id = entry.project_dir_id;
                 if entry.project_dir_id != project_dir_id {
                     project_dir_id = entry.project_dir_id;
