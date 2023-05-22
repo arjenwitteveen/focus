@@ -3,7 +3,8 @@ Dynamic_Expansion_State :: struct {
     word_start : s32 = 0;
     matches: [..] string;
     matches_table: Table(string, string);
-    last_selected_match_index := -1;
+    current_match_index := -1;
+    buffer_copy: string;
     search_buffer_before_word: string;
     search_buffer_after_word: string;
     should_reset: bool;
@@ -24,9 +25,16 @@ reset_dynamic_expansion_state :: (using state: *Dynamic_Expansion_State) {
     }
 
     word_start = -1;
-    last_selected_match_index = 0;
+    current_match_index = 0;
+
+    if buffer_copy {
+        free(buffer_copy);
+        buffer_copy = "";
+    }
+
     search_buffer_before_word = "";
     search_buffer_after_word = "";
+
     should_reset = false;
 }
 
@@ -52,16 +60,20 @@ search_backward_for_expansion :: (using state: *Dynamic_Expansion_State) -> bool
             search_buffer_before_word.count -= 1;
         }
 
+        if search_buffer_before_word.count == 0  return false;
+
         search_index := search_buffer_before_word.count - 1;
 
         // Scan to start of word.
-        while search_index > 0 && is_expansion_word_char(search_buffer_before_word[search_index]) {
+        while search_index > 0 && is_expansion_word_char(search_buffer_before_word[search_index - 1]) {
             search_index -= 1;
         }
 
-        word_length := search_buffer_before_word.count - search_index - 1;
+        word_length := search_buffer_before_word.count - search_index;
+        if word_length == 0  return false;
+
         word := search_buffer_before_word;
-        word.data += search_index + 1;
+        word.data += search_index;
         word.count = word_length;
 
         if starts_with(word, prefix) && word_length > prefix.count {
@@ -82,10 +94,9 @@ search_forward_for_expansion :: (using state: *Dynamic_Expansion_State) -> bool 
     found_match := false;
 
     while search_buffer_after_word.count {
-        if !is_expansion_word_char(search_buffer_after_word.data[0]) {
+        while search_buffer_after_word.count && !is_expansion_word_char(search_buffer_after_word.data[0]) {
             search_buffer_after_word.data += 1;
             search_buffer_after_word.count -= 1;
-            continue;
         }
 
         if starts_with(search_buffer_after_word, prefix) {
@@ -123,13 +134,13 @@ get_next_expansion :: (using state: *Dynamic_Expansion_State) -> string {
     // print("Dynamic expansion matches: %\n", matches);
 
     if matches.count {
-        if last_selected_match_index == matches.count - 1 && !found_match {
-            last_selected_match_index = -1;
+        if current_match_index == matches.count - 1 && !found_match {
+            current_match_index = -1;
             return "";
         }
 
-        last_selected_match_index = (last_selected_match_index + 1) % matches.count;
-        return matches[last_selected_match_index];
+        current_match_index = (current_match_index + 1) % matches.count;
+        return matches[current_match_index];
     }
 
     return "";
@@ -159,10 +170,13 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
 
         dynamic_expansion_state.word_start                = word_start;
         dynamic_expansion_state.prefix                    = copy_string(get_range_as_string(buffer, .{ start = word_start, end = word_end }));
-        dynamic_expansion_state.search_buffer_before_word = get_range_as_string(buffer, .{ start = 0, end = word_start });
-        dynamic_expansion_state.search_buffer_after_word  = get_range_as_string(buffer, .{ start = word_end, end = xx (buffer.bytes.count - 1) });
+        dynamic_expansion_state.buffer_copy               = copy_string(get_range_as_string(buffer, .{ start = 0, end = xx buffer.bytes.count }));
+        dynamic_expansion_state.search_buffer_before_word = slice(dynamic_expansion_state.buffer_copy, 0, word_start);
+        dynamic_expansion_state.search_buffer_after_word  = slice(dynamic_expansion_state.buffer_copy, word_end, dynamic_expansion_state.buffer_copy.count - word_end);
 
         assert(dynamic_expansion_state.prefix.count > 0);
+
+        print("Initializing expansion state with prefix '%'.\n", dynamic_expansion_state.prefix);
     }
 
     dynamic_expansion_state.should_reset = false;
