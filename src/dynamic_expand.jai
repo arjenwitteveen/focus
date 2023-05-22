@@ -175,8 +175,6 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
         dynamic_expansion_state.search_buffer_after_word  = slice(dynamic_expansion_state.buffer_copy, word_end, dynamic_expansion_state.buffer_copy.count - word_end);
 
         assert(dynamic_expansion_state.prefix.count > 0);
-
-        print("Initializing expansion state with prefix '%'.\n", dynamic_expansion_state.prefix);
     }
 
     dynamic_expansion_state.should_reset = false;
@@ -211,5 +209,6 @@ is_expansion_word_char :: (ch: u32) -> bool {
         (#char "a" <= ch && ch <= #char "z") ||
         (#char "A" <= ch && ch <= #char "Z") ||
         (ch == #char "_" && context.underscore_is_part_of_word) ||
-        (#char "0" <= ch && ch <= #char "9");
+        (#char "0" <= ch && ch <= #char "9") ||
+        ch == #char "#";
 }
