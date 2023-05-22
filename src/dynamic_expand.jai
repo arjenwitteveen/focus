@@ -11,11 +11,29 @@ Dynamic_Expansion_State :: struct {
 
 dynamic_expansion_state: Dynamic_Expansion_State;
 
+reset_dynamic_expansion_state :: (using state: *Dynamic_Expansion_State) {
+    if prefix {
+        free(prefix);
+        prefix = "";
+    }
+
+    if matches.count {
+        for matches  free(it);
+        table_reset(*matches_table);
+        array_reset_keeping_memory(*matches);
+    }
+
+    word_start = -1;
+    last_selected_match_index = 0;
+    search_buffer_before_word = "";
+    search_buffer_after_word = "";
+    should_reset = false;
+}
+
 #scope_file
 
 maybe_add_match :: (using state: *Dynamic_Expansion_State, match: string) -> bool {
-    _, found := table_find(*matches_table, match);
-    if found  return false;
+    if table_contains(*matches_table, match)  return false;
 
     s := copy_string(match);
     table_add(*matches_table, s, s);
@@ -102,8 +120,7 @@ get_next_expansion :: (using state: *Dynamic_Expansion_State) -> string {
     found_match := search_backward_for_expansion(state);
     if !found_match  found_match = search_forward_for_expansion(state);
 
-    print("Dynamic expansion matches: %\n", matches);
-    // print("last_selected_match_index = % / %\n", last_selected_match_index, matches.count - 1);
+    // print("Dynamic expansion matches: %\n", matches);
 
     if matches.count {
         if last_selected_match_index == matches.count - 1 && !found_match {
@@ -127,7 +144,6 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
     if !dynamic_expansion_state.prefix {
         if has_selection(cursor) || cursor.pos == 0  return false;
         if !is_expansion_word_char(get_char_at_offset(buffer, cursor.pos - 1))  return false;
-("Initializing dynamic_expansion_state.\n");
 
         reset_dynamic_expansion_state(*dynamic_expansion_state);
 
@@ -145,18 +161,21 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
         dynamic_expansion_state.prefix                    = copy_string(get_range_as_string(buffer, .{ start = word_start, end = word_end }));
         dynamic_expansion_state.search_buffer_before_word = get_range_as_string(buffer, .{ start = 0, end = word_start });
         dynamic_expansion_state.search_buffer_after_word  = get_range_as_string(buffer, .{ start = word_end, end = xx (buffer.bytes.count - 1) });
+
+        assert(dynamic_expansion_state.prefix.count > 0);
     }
 
     dynamic_expansion_state.should_reset = false;
 
     expansion := get_next_expansion(*dynamic_expansion_state);
+    expansion_found := expansion.count > 0;
 
-    if expansion {
+    if expansion_found {
         assert(cursor.pos >= dynamic_expansion_state.word_start);
-        print("Found expansion '%'.\n", expansion);
+        // print("Found expansion '%'.\n", expansion);
     } else {
         expansion = dynamic_expansion_state.prefix;
-        print("No further expansions, back to '%'.\n", dynamic_expansion_state.prefix);
+        // print("No further expansions, back to '%'.\n", dynamic_expansion_state.prefix);
     }
 
     range_to_replace := Offset_Range.{ start = dynamic_expansion_state.word_start, end = cursor.pos };
@@ -168,21 +187,9 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
 
     organise_cursors(editor);
 
-    return true;
-}
+    editor.cursor_moved = expansion_found;
 
-reset_dynamic_expansion_state :: (using state: *Dynamic_Expansion_State) {
-    free(prefix);
-    prefix = "";
-    deinit(*matches_table);
-    for * matches  free(it);
-    array_reset(*matches);
-    word_start = -1;
-    last_selected_match_index = 0;
-    search_buffer_before_word = "";
-    search_buffer_after_word = "";
-    should_reset = false;
-    print("Reset expansion state.\n");
+    return true;
 }
 
 is_expansion_word_char :: (ch: u32) -> bool {

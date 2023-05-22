@@ -6,12 +6,12 @@ editors_handle_event :: (event: Input.Event) -> handled: bool {
     context.current_editor_id = editors.active;
     defer context.current_editor_id = -1;
 
-    dynamic_expansion_state.should_reset = true;
     defer if dynamic_expansion_state.should_reset  reset_dynamic_expansion_state(*dynamic_expansion_state);
 
     if event.type == {
         case .KEYBOARD;
             if event.key_pressed {
+                dynamic_expansion_state.should_reset = true;
                 action, mapping := map_event_to_action(event, Action_Editors);
                 return active_editor_handle_event(event, action);
             } else {
@@ -34,6 +34,7 @@ editors_handle_event :: (event: Input.Event) -> handled: bool {
 
         case .TEXT_INPUT;
             if !key_sequence_input_state.key_sequence_in_progress {
+                dynamic_expansion_state.should_reset = true;
                 active_editor_type_char(event.utf32);
                 return true;
             }
@@ -137,7 +138,6 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
 
     keep_selection := false;
     enabled_whole_words := false;
-    reset_dynamic_expansion := true;
 
     if action == {
         // General actions (which are not associated with any cursor)
@@ -248,8 +248,6 @@ active_editor_handle_event :: (event: Input.Event, action: Action_Editors) -> ha
     if editor.cursor_moved && !enabled_whole_words then editor.search_whole_words = false;
     if editor.cursor_moved then editor.refresh_highlights = true;  // update or remove highlights
     if editor.cursor_moved then cursors_start_blinking();
-
-    if reset_dynamic_expansion  reset_dynamic_expansion_state(*dynamic_expansion_state);
 
     return true;
 }
