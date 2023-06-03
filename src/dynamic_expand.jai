@@ -1,7 +1,7 @@
 Dynamic_Expansion_State :: struct {
     prefix: string;
     prefix_offset: s32;
-    prefix_character_lookup: [256] int;
+    character_skip: [256] int;
     matches: [..] Expansion_Match;
     matches_table: Table(string, string);
     current_match_index := -1;
@@ -41,40 +41,61 @@ scan_buffer_for_matches :: (using state: *Dynamic_Expansion_State) {
 
     if prefix.count > buffer.bytes.count || prefix.count == 0  return;
 
-    start_time := get_time();
-    defer {
-        print("Scan for expansions took % s. Found % expansions.\n", formatFloat(get_time() - start_time, width = 4), matches.count);
-    }
+    // start_time := get_time();
+    // defer {
+    //     print("Scan for expansions took % s. Found % expansions.\n", formatFloat(get_time() - start_time, width = 4), matches.count);
+    // }
+
+    prefix_position := buffer.bytes.data + prefix_offset;
 
     c := buffer.bytes.data;
-    end := buffer.bytes.data + buffer.bytes.count;
+    buffer_end := buffer.bytes.data + buffer.bytes.count;
+    search_end := buffer_end - prefix.count;
 
-    while c < end {
+    while true {
         // Scan to the start of a word.
-        if !is_expansion_word_char(<<c) {
+        while c < search_end && !is_expansion_word_char(<<c) {
+            // If the first character that would follow the prefix at the current position is not an allowable expansion character, we can skip over 1 plus the prefix length number of characters.
+            // if c < seach_end && !is_expansion_word_char(<<(c + prefix.count)) {
+            //     c += prefix.count;
+            // }
+
             c += 1;
             continue;
         }
 
-        p := prefix.data;
-        match := true;
-
-        for 0..prefix.count - 1 {
-            if p[it] != <<c {
-                c += 1;
-                match = false;
-                break;
-            }
-            c += 1;
+        if c >= search_end  break;
+        if c == prefix_position {
+            c += prefix.count;
+            continue;
         }
 
-        match_offset := cast(s32) (c - buffer.bytes.data - prefix.count);
+        skip := 1;
+        mismatching_character := -1;
+
+        for 1..prefix.count {
+            char := c[prefix.count - it];
+            if prefix[prefix.count - it] != char {
+                mismatching_character = char;
+                break;
+            }
+        }
+
+        if mismatching_character >= 0 {
+            c += character_skip[mismatching_character];
+            continue;
+        }
 
         // Scan to the end of the current word.
-        while c < end && is_expansion_word_char(<<c)  c += 1;
+        match_start := c;
+        c += prefix.count;
+        while c < buffer_end && is_expansion_word_char(<<c)  c += 1;
 
-        if match && match_offset != prefix_offset {
-            word_range := Offset_Range.{ start = match_offset, end = cast(s32) (c - buffer.bytes.data) };
+        match_start_offset := cast(s32) (match_start - buffer.bytes.data);
+        match_end_offset   := cast(s32) (c           - buffer.bytes.data);
+
+        if match_end_offset - match_start_offset > prefix.count {
+            word_range := Offset_Range.{ start = xx match_start_offset, end = xx match_end_offset };
             word := get_range_as_string(buffer, word_range);
 
             if !table_contains(*matches_table, word) {
@@ -84,8 +105,8 @@ scan_buffer_for_matches :: (using state: *Dynamic_Expansion_State) {
 
                 array_add(*matches, .{
                     found_string = word_copy,
-                    offset = match_offset,
-                    distance_to_cursor = abs(match_offset - prefix_offset),
+                    offset = match_start_offset,
+                    distance_to_cursor = abs(match_start_offset - prefix_offset),
                 });
             }
         }
@@ -128,11 +149,8 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
 
         assert(state.prefix.count > 0);
 
-        // memset(state.prefix_character_lookup.data, 0, state.prefix_character_lookup.count);
-        // for 0..state.prefix.count - 1  state.prefix_character_lookup[cast(int) state.prefix[it]] = true;
-
-        for 0..state.prefix_character_lookup.count - 1  state.prefix_character_lookup[it] = - 1;
-        for 0..state.prefix.count - 1  state.prefix_character_lookup[cast(int) state.prefix[it]] = it;
+        for 0..state.character_skip.count - 1  state.character_skip[it] = state.prefix.count;
+        for 0..state.prefix.count - 1  state.character_skip[cast(int) state.prefix[it]] = state.prefix.count - it;
 
         scan_buffer_for_matches(state);
 
