@@ -18,7 +18,7 @@ __pycache__
 # These files are explicitly allowed so that the editor doesn't waste time figuring out
 # whether it should ignore these or not (if a file is not explicitly allowed or ignored,
 # it will be read to determine if it's binary or not).
-.jai .c .cpp .h .hpp .cc .txt .md .focus-* .ini .csv .log .sql .py .m .html .xml .plist .js .ts .yml .yaml .toml
+.jai .c .cpp .h .hpp .cc .cs .txt .md .focus-* .ini .csv .log .sql .py .m .html .xml .plist .js .ts .yml .yaml .toml
 
 [ignore file extensions]
 # Files with the following extensions will not appear in the file open dialog and won't be indexed.
@@ -32,7 +32,7 @@ __pycache__
 .bin .sys .iso
 .nib .exp
 .pyc .rpyc
-.DS_Store
+.DS_Store .dmg
 
 [[settings]]
 # NOTE: please copy the whole block when overriding settings, otherwise defaults will be used
@@ -50,6 +50,7 @@ double_shift_to_search_in_workspace:    false
 max_entries_in_open_file_dialog:        2000
 tab_size:                               4
 line_height_scale_percent:              120
+max_editor_width:                       -1
 
 
 [[keymap]]
@@ -72,8 +73,8 @@ Cmd-Shift-D                 duplicate_lines
 # Shift-Delete                delete_line
 
 Cmd-K                       delete_to_end_of_line
-Cmd-Shift-Delete            delete_to_end_of_line
-Cmd-Shift-Backspace         delete_to_start_of_line
+Cmd-Delete                  delete_to_end_of_line
+Cmd-Backspace               delete_to_start_of_line
 
 Alt-ArrowUp                 move_selected_lines_up
 Alt-ArrowDown               move_selected_lines_down
@@ -140,6 +141,7 @@ Enter                       open_entry_in_place
 Cmd-Enter                   open_entry_on_the_side
 Cmd-1                       open_entry_on_the_left
 Cmd-2                       open_entry_on_the_right
+Shift-Enter                 open_entry_in_explorer
 
 Tab                         open_directory
 
@@ -155,8 +157,10 @@ Cmd-Enter                   open_entry_on_the_side
 Cmd-1                       open_entry_on_the_left
 Cmd-2                       open_entry_on_the_right
 
-Shift-Enter                 move_up  # an Cmdernative way to move
+Shift-Enter                 move_up  # an alternative way to move
 
+Cmd-Alt-C                   toggle_case_sensitive
+Cmd-Alt-W                   toggle_whole_word
 
 [common]
 
@@ -223,8 +227,8 @@ Cmd-Shift-L                 toggle_expand
 {Shift}-Delete              delete_right_char
 {Shift}-Alt-Backspace       delete_word_left_no_underscore
 {Shift}-Alt-Delete          delete_word_right_no_underscore
-{Shift}-Ctrl-Backspace      delete_word_left
-{Shift}-Ctrl-Delete         delete_word_right
+{Shift}-Alt-Cmd-Backspace   delete_word_left
+{Shift}-Alt-Cmd-Delete      delete_word_right
 
 Cmd-Plus                    increase_font_size
 Cmd-Minus                   decrease_font_size

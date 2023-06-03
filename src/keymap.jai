@@ -336,6 +336,7 @@ ACTIONS_OPEN_FILE_DIALOG :: #run arrays_concat(ACTIONS_COMMON, string.[
     "open_entry_on_the_side",
     "open_entry_on_the_left",
     "open_entry_on_the_right",
+    "open_entry_in_explorer",
     "open_directory",
     "pop_directory",
 ]);
@@ -346,6 +347,8 @@ ACTIONS_SEARCH_DIALOG :: #run arrays_concat(ACTIONS_COMMON, string.[
     "open_entry_on_the_side",
     "open_entry_on_the_left",
     "open_entry_on_the_right",
+    "toggle_case_sensitive",
+    "toggle_whole_word",
 ]);
 
 // Used for testing strings in parser

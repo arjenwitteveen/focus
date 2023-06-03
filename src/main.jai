@@ -1,6 +1,3 @@
-#placeholder VERSION;
-#placeholder RELEASE_DATE;
-
 main :: () {
     cpu_info = get_cpu_info();
 
@@ -314,13 +311,14 @@ handle_common_editor_action :: (action: Action_Editors, placement: Editor_Placem
 
 init_fonts_and_dependent_things :: () {
     delta := font_size - default_font_size;
-    font_size             = clamp(font_size,                                MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_ui_size          = clamp(DEFAULT_FONT_UI_SIZE          + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_ui_big_size      = clamp(DEFAULT_FONT_UI_BIG_SIZE      + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_ui_medium_size   = clamp(DEFAULT_FONT_UI_MEDIUM_SIZE   + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_ui_small_size    = clamp(DEFAULT_FONT_UI_SMALL_SIZE    + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_icons_size       = clamp(DEFAULT_FONT_ICONS_SIZE       + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
-    font_icons_small_size = clamp(DEFAULT_FONT_ICONS_SMALL_SIZE + delta,    MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_size               = clamp(font_size,                               MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_ui_size            = clamp(DEFAULT_FONT_UI_SIZE            + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_ui_big_size        = clamp(DEFAULT_FONT_UI_BIG_SIZE        + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_ui_medium_size     = clamp(DEFAULT_FONT_UI_MEDIUM_SIZE     + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_ui_small_size      = clamp(DEFAULT_FONT_UI_SMALL_SIZE      + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_ui_very_small_size = clamp(DEFAULT_FONT_UI_VERY_SMALL_SIZE + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_icons_size         = clamp(DEFAULT_FONT_ICONS_SIZE         + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_icons_small_size   = clamp(DEFAULT_FONT_ICONS_SMALL_SIZE   + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
 
     font = Simp.get_font_at_size(main_font_name, main_font_data, cast(int) (font_size * dpi_scale));
     assert(font != null, "Couldn't init main text font\n");
@@ -342,6 +340,9 @@ init_fonts_and_dependent_things :: () {
 
     font_ui_small = Simp.get_font_at_size(FONT_UI.name, FONT_UI.data, cast(int) (font_ui_small_size * dpi_scale));
     assert(font_ui_small != null, "Couldn't init small ui font\n");
+
+    font_ui_very_small = Simp.get_font_at_size(FONT_UI.name, FONT_UI.data, cast(int) (font_ui_very_small_size * dpi_scale));
+    assert(font_ui_very_small != null, "Couldn't init small ui font\n");
 
     font_icons = Simp.get_font_at_size(FONT_ICONS.name, FONT_ICONS.data, cast(int) (font_icons_size * dpi_scale));
     assert(font_icons != null, "Couldn't init main icon font\n");
@@ -559,6 +560,7 @@ font_ui:            *Simp.Dynamic_Font;
 font_ui_bold:       *Simp.Dynamic_Font;
 font_ui_big:        *Simp.Dynamic_Font;
 font_ui_small:      *Simp.Dynamic_Font;
+font_ui_very_small: *Simp.Dynamic_Font;
 font_ui_medium:     *Simp.Dynamic_Font;
 font_icons:         *Simp.Dynamic_Font;
 font_icons_small:   *Simp.Dynamic_Font;
@@ -568,6 +570,7 @@ DEFAULT_FONT_UI_SIZE            :: 15;
 DEFAULT_FONT_UI_BIG_SIZE        :: 28;
 DEFAULT_FONT_UI_MEDIUM_SIZE     :: 18;
 DEFAULT_FONT_UI_SMALL_SIZE      :: 14;
+DEFAULT_FONT_UI_VERY_SMALL_SIZE :: 12;
 DEFAULT_FONT_ICONS_SIZE         :: 16;
 DEFAULT_FONT_ICONS_SMALL_SIZE   :: 8;
 
@@ -581,6 +584,7 @@ font_ui_size            := DEFAULT_FONT_UI_SIZE;
 font_ui_big_size        := DEFAULT_FONT_UI_BIG_SIZE;
 font_ui_medium_size     := DEFAULT_FONT_UI_MEDIUM_SIZE;
 font_ui_small_size      := DEFAULT_FONT_UI_SMALL_SIZE;
+font_ui_very_small_size := DEFAULT_FONT_UI_VERY_SMALL_SIZE;
 font_icons_size         := DEFAULT_FONT_ICONS_SIZE;
 font_icons_small_size   := DEFAULT_FONT_ICONS_SMALL_SIZE;
 
@@ -658,6 +662,7 @@ dont_ignore_next_window_resize := false;
 
 #load "langs/jai.jai";
 #load "langs/c.jai";
+#load "langs/csharp.jai";
 #load "langs/focus_config.jai";
 #load "langs/worklog.jai";
 

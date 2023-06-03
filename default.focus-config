@@ -18,7 +18,7 @@ __pycache__
 # These files are explicitly allowed so that the editor doesn't waste time figuring out
 # whether it should ignore these or not (if a file is not explicitly allowed or ignored,
 # it will be read to determine if it's binary or not).
-.jai .c .cpp .h .hpp .cc .txt .md .focus-* .ini .csv .log .sql .py .m .html .xml .plist .js .ts .yml .yaml .toml
+.jai .c .cpp .h .hpp .cc .cs .txt .md .focus-* .ini .csv .log .sql .py .m .html .xml .plist .js .ts .yml .yaml .toml
 
 [ignore file extensions]
 # Files with the following extensions will not appear in the file open dialog and won't be indexed.
@@ -32,7 +32,7 @@ __pycache__
 .bin .sys .iso
 .nib .exp
 .pyc .rpyc
-.DS_Store
+.DS_Store .dmg
 
 [[settings]]
 # NOTE: please copy the whole block when overriding settings, otherwise defaults will be used
@@ -50,6 +50,7 @@ double_shift_to_search_in_workspace:    false
 max_entries_in_open_file_dialog:        2000
 tab_size:                               4
 line_height_scale_percent:              120
+max_editor_width:                       -1
 
 
 [[keymap]]
@@ -107,7 +108,7 @@ Ctrl-Alt-ArrowDown          scroll_viewport_down
 Ctrl-Alt-ArrowLeft          scroll_viewport_left
 Ctrl-Alt-ArrowRight         scroll_viewport_right
 
-Alt-C                       move_cursor_to_viewport_center
+Alt-V                       move_cursor_to_viewport_center
 
 {Shift}-Ctrl-ArrowUp        move_up_to_empty_line
 {Shift}-Ctrl-ArrowDown      move_down_to_empty_line
@@ -141,6 +142,7 @@ Enter                       open_entry_in_place
 Ctrl-Enter                  open_entry_on_the_side
 Ctrl-1                      open_entry_on_the_left
 Ctrl-2                      open_entry_on_the_right
+Shift-Enter                 open_entry_in_explorer
 
 Tab                         open_directory
 
@@ -158,6 +160,8 @@ Ctrl-2                      open_entry_on_the_right
 
 Shift-Enter                 move_up  # an alternative way to move
 
+Alt-C                       toggle_case_sensitive
+Alt-W                       toggle_whole_word
 
 [common]
 

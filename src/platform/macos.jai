@@ -49,14 +49,15 @@ platform_maximize_window :: inline (window: Window_Type) {
 }
 
 platform_enable_drag_and_drop :: inline (window: Window_Type) {
-
+    types := NSArray(NSPasteboardType).arrayWithObject(NSPasteboardTypeFileURL);
+    NSView.registerForDraggedTypes(window, types);
 }
 
 platform_get_dpi_scale :: (window: Window_Type) -> float {
     return xx NSView.convertPointToBacking(NSWindow.contentView(window), .{1, 0}).x;
 }
 
-platform_set_window_title :: (title: string) {
+platform_set_window_title :: inline (title: string) {
     NSWindow.setTitle(window, title);
 }
 
@@ -88,8 +89,9 @@ platform_get_fonts_dir :: inline () -> string {
     return "/Library/Fonts";
 }
 
-platform_open_in_explorer :: inline (dir: string) {
-    run_command("open", dir);
+platform_open_in_explorer :: (path: string, reveal := false) {
+    if reveal run_command("open", "-R", path);
+    else      run_command("open", path);
 }
 
 #scope_file
