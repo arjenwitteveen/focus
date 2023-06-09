@@ -177,7 +177,7 @@ try_expand_current_word :: (editor: *Editor, buffer: *Buffer) -> bool {
     put_cursor_in_valid_spot(cursor, buffer);
 
     organise_cursors(editor);
-    editor.cursor_moved = true;
+    editor.cursor_moved = .unimportant;
 
     return true;
 }
