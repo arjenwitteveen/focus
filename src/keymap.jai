@@ -45,6 +45,22 @@ map_event_to_action :: (event: Input.Event, $Action: Type) -> Action, Key_Mappin
     return invalid_action, invalid_mapping;
 }
 
+
+dump_key_mappings :: () {
+    dump_keys :: (title: string, key_mapping: []Key_Mapping, action_type: Type) #expand {
+        print("\n%\n", title);
+        for keymap: key_mapping {
+            for key_combo: keymap.key_sequence
+                print("% %\n", key_combo_strings(key_combo), cast(action_type)keymap.action);
+        }
+    }
+    dump_keys("File", config.keymap.open_file_dialog, Action_Open_File_Dialog);
+    dump_keys("Search", config.keymap.search_dialog, Action_Search_Dialog);
+    dump_keys("Editor", config.keymap.editors, Action_Editors);
+    dump_keys("Common", config.keymap.common, Action_Common);
+}
+
+
 activate_hold_action :: (action: $Action_Type, event: Input.Event) {
     _, matched_mapping := map_event_to_action(event, Action_Type);  // we map it here again to avoid passing it in through multiple functions
 
@@ -125,6 +141,24 @@ key_combo_strings :: (combo: Key_Combo) -> [] string /* temp */ {
     key_name := keymap_map_key_code_to_string(combo.key_code);
     array_add(*keys, key_name);
     return keys;
+}
+
+key_sequence_for_action_as_string :: (action: $T) -> string /* temp */ {
+    key_sequence := get_first_matching_key_sequence_from_action(action);
+    if !key_sequence return "";
+
+    b: String_Builder;
+    b.allocator = temp;
+
+    for combo: key_sequence {
+        for combo {
+            print_to_builder(*b, "%", it);
+            if it_index < combo.count - 1  print_to_builder(*b, " + ");
+        }
+        if it_index < key_sequence.count - 1  print_to_builder(*b, "  ");
+    }
+
+    return builder_to_string(*b);
 }
 
 #scope_file
@@ -284,6 +318,9 @@ ACTIONS_COMMON :: string.[
     "reset_font_size_to_default",
     "close_current_editor",
     "close_other_editor",
+
+    "dump_key_mappings",
+    "dump_editor_history",
 ];
 
 ACTIONS_EDITORS :: #run arrays_concat(ACTIONS_COMMON, string.[
@@ -314,6 +351,7 @@ ACTIONS_EDITORS :: #run arrays_concat(ACTIONS_COMMON, string.[
     "scroll_viewport_right",
     "move_up_to_empty_line",
     "move_down_to_empty_line",
+    "center_viewport_on_cursor",
     "move_cursor_to_viewport_center",
     "remove_additional_cursors",
     "break_line",
@@ -327,6 +365,8 @@ ACTIONS_EDITORS :: #run arrays_concat(ACTIONS_COMMON, string.[
     "move_editor_to_the_right",
     "create_new_file",
     "create_new_file_on_the_side",
+    "move_to_previous_editor_history",
+    "move_to_next_editor_history",
     "dynamic_expand",
     "indent_or_expand",
 ]);

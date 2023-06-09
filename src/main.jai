@@ -155,7 +155,7 @@ main :: () {
 
         for * editor : open_editors {
             using editor;
-            cursor_moved = false;
+            cursor_moved = .has_not_moved;
             if old_line_height != line_height {
                 // Adjust viewport position
                 lines_scrolled := viewport.top / old_line_height;
@@ -253,6 +253,7 @@ main :: () {
 
         // TODO:
         // maybe_save_editor_state_into_session();
+        maybe_save_editor_history();
 
         if should_reload_workspace {
             hard_reload_workspace();
@@ -300,6 +301,9 @@ handle_common_editor_action :: (action: Action_Editors, placement: Editor_Placem
 
         case .show_commands;                                    show_commands_dialog();                             return true;
 
+        case .dump_key_mappings;                                dump_key_mappings();                                return true;
+        case .dump_editor_history;                              dump_editor_history();                              return true;
+
         // TODO: search_in_buffer
         case .search_in_project;
             if active_global_widget == .editors then finder_open_from_editor(); else finder_open();
@@ -318,6 +322,7 @@ init_fonts_and_dependent_things :: () {
     font_ui_very_small_size = clamp(DEFAULT_FONT_UI_VERY_SMALL_SIZE + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
     font_icons_size         = clamp(DEFAULT_FONT_ICONS_SIZE         + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
     font_icons_small_size   = clamp(DEFAULT_FONT_ICONS_SMALL_SIZE   + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    font_icons_tiny_size    = clamp(DEFAULT_FONT_ICONS_TINY_SIZE    + delta, MIN_FONT_SIZE, MAX_FONT_SIZE);
 
     font = Simp.get_font_at_size(main_font_name, main_font_data, cast(int) (font_size * dpi_scale));
     assert(font != null, "Couldn't init main text font\n");
@@ -347,7 +352,10 @@ init_fonts_and_dependent_things :: () {
     assert(font_icons != null, "Couldn't init main icon font\n");
 
     font_icons_small = Simp.get_font_at_size(FONT_ICONS.name, FONT_ICONS.data, cast(int) (font_icons_small_size * dpi_scale));
-    assert(font_icons_small != null, "Couldn't init small icon font\n");
+    assert(font_icons_small != null, "Couldn't init main icon font\n");
+
+    font_icons_tiny = Simp.get_font_at_size(FONT_ICONS.name, FONT_ICONS.data, cast(int) (font_icons_tiny_size * dpi_scale));
+    assert(font_icons_tiny != null, "Couldn't init tiny icon font\n");
 
     // WORKAROUND:
     // Make a dummy call with most common chars for each font so that
@@ -367,12 +375,12 @@ init_fonts_and_dependent_things :: () {
         char := convert_utf32_to_utf8(xx it);
         append(*common_icons, to_string(*char));
     }
-    append(*common_icons, PEN_CHAR);
-    append(*common_icons, XMARK_CHAR);
+    append(*common_icons, PEN_ICON);
+    append(*common_icons, XMARK_ICON);
     icons_string := builder_to_string(*common_icons);
 
     Simp.prepare_text(font_icons,       icons_string);
-    Simp.prepare_text(font_icons_small, icons_string);
+    Simp.prepare_text(font_icons_tiny, icons_string);
 
     // Things that depend on char size
     char_size       = cast(float) font.em_width;
@@ -400,10 +408,6 @@ update_mouse_state :: () {
     mouse.smooth_scroll = (mouse.scroll_y_delta % 120) == 0;  // @Robustness: hard-coded typical delta, but it really should be ok for now
     if !config.settings.smooth_scrolling then mouse.smooth_scroll = false;
 
-    update_button(*mouse.left,   .MOUSE_BUTTON_LEFT);
-    update_button(*mouse.right,  .MOUSE_BUTTON_RIGHT);
-    update_button(*mouse.middle, .MOUSE_BUTTON_MIDDLE);
-
     update_button :: (button: *Mouse_Button_State, key: Input.Key_Code) {
         button.is_down       = key_state(key) & .DOWN  != 0;  // NOTE: this doesn't include just_pressed!
         button.just_pressed  = key_state(key) & .START != 0;
@@ -429,6 +433,10 @@ update_mouse_state :: () {
 
         button.is_dragging = button.is_down && mouse.pointer != button.last_down_pos;
     }
+
+    update_button(*mouse.left,   .MOUSE_BUTTON_LEFT);
+    update_button(*mouse.right,  .MOUSE_BUTTON_RIGHT);
+    update_button(*mouse.middle, .MOUSE_BUTTON_MIDDLE);
 }
 
 increase_font_size :: () {
@@ -548,9 +556,11 @@ Mouse_Button_State :: struct {
 
 WHEEL_SENSITIVITY :: 1.0;
 
-PEN_CHAR    :: #run to_string(*convert_utf32_to_utf8(0xf304));
-BULLET_CHAR :: #run to_string(*convert_utf32_to_utf8(0x2022));
-XMARK_CHAR  :: #run to_string(*convert_utf32_to_utf8(0xf057));
+PEN_ICON            :: #run to_string(*convert_utf32_to_utf8(0xf304));
+CASE_SENSITIVE_ICON :: #run to_string(*convert_utf32_to_utf8(0xf031));
+WHOLE_WORD_ICON     :: #run to_string(*convert_utf32_to_utf8(0xe4ba));
+BULLET_ICON         :: #run to_string(*convert_utf32_to_utf8(0x2022));
+XMARK_ICON          :: #run to_string(*convert_utf32_to_utf8(0xf057));
 
 TAB_SIZE: s32 = 4;
 
@@ -563,6 +573,7 @@ font_ui_very_small: *Simp.Dynamic_Font;
 font_ui_medium:     *Simp.Dynamic_Font;
 font_icons:         *Simp.Dynamic_Font;
 font_icons_small:   *Simp.Dynamic_Font;
+font_icons_tiny:    *Simp.Dynamic_Font;
 
 DEFAULT_FONT_SIZE               :: 14;
 DEFAULT_FONT_UI_SIZE            :: 15;
@@ -571,7 +582,8 @@ DEFAULT_FONT_UI_MEDIUM_SIZE     :: 18;
 DEFAULT_FONT_UI_SMALL_SIZE      :: 14;
 DEFAULT_FONT_UI_VERY_SMALL_SIZE :: 12;
 DEFAULT_FONT_ICONS_SIZE         :: 16;
-DEFAULT_FONT_ICONS_SMALL_SIZE   :: 8;
+DEFAULT_FONT_ICONS_SMALL_SIZE   :: 12;
+DEFAULT_FONT_ICONS_TINY_SIZE    :: 8;
 
 main_font_name := "default";
 main_font_data := #run FONT.data;
@@ -586,6 +598,7 @@ font_ui_small_size      := DEFAULT_FONT_UI_SMALL_SIZE;
 font_ui_very_small_size := DEFAULT_FONT_UI_VERY_SMALL_SIZE;
 font_icons_size         := DEFAULT_FONT_ICONS_SIZE;
 font_icons_small_size   := DEFAULT_FONT_ICONS_SMALL_SIZE;
+font_icons_tiny_size    := DEFAULT_FONT_ICONS_TINY_SIZE;
 
 // Depend on font size
 char_size:                  float;

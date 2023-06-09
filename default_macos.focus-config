@@ -47,10 +47,12 @@ insert_spaces_when_pressing_tab:        true
 strip_trailing_whitespace_on_save:      false
 smooth_scrolling:                       true
 double_shift_to_search_in_workspace:    false
+can_cancel_go_to_line:                  true
 max_entries_in_open_file_dialog:        2000
 tab_size:                               4
 line_height_scale_percent:              120
 max_editor_width:                       -1
+editor_history_size:                    128
 
 
 [[keymap]]
@@ -89,6 +91,9 @@ Cmd-]                       indent
 Cmd-[                       unindent
 
 Cmd-S                       save
+
+Cmd-Alt-Minus               move_to_previous_editor_history
+Cmd-Alt-Plus                move_to_next_editor_history
 
 Cmd-/                       toggle_comment
 Cmd-L                       select_line

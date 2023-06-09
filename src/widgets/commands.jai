@@ -92,13 +92,13 @@ refresh_entries :: () {
         entry.sort_key = score_part | used_part;
     }
 
-    quick_sort(filtered, compare_entries);
-
     compare_entries :: (e1: Entry, e2: Entry) -> s64 {
         key_diff := cast,no_check(s64) e2.sort_key - cast,no_check(s64) e1.sort_key;
         if key_diff != 0 return key_diff;
         return memcmp(e1.name.data, e2.name.data, min(e1.name.count, e2.name.count));
     }
+
+    quick_sort(filtered, compare_entries);
 }
 
 move_cursor :: (delta: s64, wrap := false, snap := true) {
@@ -172,8 +172,11 @@ commands := #run Command.[
     .{ .move_up_to_empty_line,                              "Move Up To Empty Line",              0, .Single },
     .{ .move_down_to_empty_line,                            "Move Down To Empty Line",            0, .Single },
 
+    .{ .center_viewport_on_cursor,                          "Center View On Cursor",              0, .Single },
     .{ .move_cursor_to_viewport_center,                     "Move Cursor To Screen Center",       0, .Single },
     .{ .remove_additional_cursors,                          "Remove Additional Cursors",          0, .Single },
+    .{ .move_to_previous_editor_history,                    "Move To Previous Cursor Position",   0, .Single },
+    .{ .move_to_next_editor_history,                        "Move To Next Cursor Position",       0, .Single },
 
     .{ .new_line_below_without_breaking,                    "New Line Below Without Breaking",    0, .Single },
     .{ .new_line_above_without_breaking,                    "New Line Above Without Breaking",    0, .Single },
@@ -186,6 +189,13 @@ commands := #run Command.[
 
     .{ .move_editor_to_the_left,                            "Move Pane To The Left",              0, .Double },
     .{ .move_editor_to_the_right,                           "Move Pane To The Right",             0, .Double },
+
+    // @TODO You can't put a #if inside the array declaration.  You can decide how you want to handle debug stuff like this:
+    //       To keep it without exposing to users you'd need to either duplicate this entire block, change the array into a [..],
+    //       change the struct to include a `debug` bool (or enum w/e), or could prefix the name string with "DEBUG: " and not show
+    //       those to users.  Or just leave them commented out / remove them entirely.
+    //.{ .dump_key_mappings,                                  "Dump Key Mappings",                  0, .None },
+    //.{ .dump_editor_history,                                "Dump Editor History",                0, .None },
 ];
 
 Command :: struct {

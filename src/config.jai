@@ -81,6 +81,13 @@ maybe_refresh_config :: (path: string) {
 
     dont_ignore_next_window_resize = true;
     platform_apply_config(*config.platform);
+
+    if current_editor_history_size < config.settings.editor_history_size && editor_history.head < editor_history.tail {
+         editor_history.head    = 0;
+         editor_history.tail    = 0;
+         editor_history.current = 0;
+         current_editor_history_size = config.settings.editor_history_size;
+    }
 }
 
 is_our_config_file :: (path: string) -> bool {
@@ -91,6 +98,11 @@ find_font_by_name :: (name: string) -> path: string, error_msg: string /* temp *
     if name == "default" return "default", "";
 
     has_extension := ends_with_nocase(name, ".ttf") || ends_with_nocase(name, ".otf");
+
+    try_path :: (font_path: string) #expand {
+        if file_exists(font_path) `return font_path, "";
+        array_add(*tried_paths, font_path);
+    }
 
     tried_paths: [..] string;
     tried_paths.allocator = temp;
@@ -110,11 +122,6 @@ find_font_by_name :: (name: string) -> path: string, error_msg: string /* temp *
     if !has_extension {
         try_path(tprint("%/%.ttf", fonts_dir, name));
         try_path(tprint("%/%.otf", fonts_dir, name));
-    }
-
-    try_path :: (font_path: string) #expand {
-        if file_exists(font_path) `return font_path, "";
-        array_add(*tried_paths, font_path);
     }
 
     if ! #compile_time {
@@ -246,7 +253,7 @@ merge_configs :: (dst: *Config, src: Config) {
     CODE_COLOR_MAP = refresh_code_color_map();
 
     // Platform config
-    dst.platform = src.platform;
+    platform_copy_config(*src.platform, *dst.platform);
 }
 
 load_font_by_name :: (name: string) -> font_data: string, success: bool {
@@ -305,6 +312,8 @@ Settings :: struct {
     smooth_scrolling                    := true;
     line_height_scale_percent           := 120;
     max_editor_width                    := -1;
+    can_cancel_go_to_line               := true;
+    editor_history_size                 := 128;
 
     // TODO
     // convert_tabs_to_spaces_on_load:     false
@@ -456,11 +465,13 @@ SETTINGS :: Setting.[
     .{ "insert_spaces_when_pressing_tab",     .boolean },
     .{ "strip_trailing_whitespace_on_save",   .boolean },
     .{ "smooth_scrolling",                    .boolean },
+    .{ "can_cancel_go_to_line",               .boolean },
 
     .{ "max_entries_in_open_file_dialog",     .integer },
     .{ "tab_size",                            .integer },
     .{ "line_height_scale_percent",           .integer },
     .{ "max_editor_width",                    .integer },
+    .{ "editor_history_size",                 .integer },
 ];
 
 DEFAULT_CONFIG_FILE_DATA  :: #run read_entire_file(DEFAULT_CONFIG_NAME);

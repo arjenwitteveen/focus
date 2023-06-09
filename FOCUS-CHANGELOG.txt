@@ -3,17 +3,14 @@
 - Line wrap
 - Optional line numbers
 - Config files for directories (i.e. adding a .focus-config file to your directory and have Focus load it)
-- Config option to limit the width of an editor
-- Case-sensitive search
 - Global search improvements (the ability to filter additionally by filename)
 - Backup unsaved changes
 - Highlight other languages
 - Improve smooth scrolling for fancy mice
-- Undo/redo for UI
 - Identifier search
 - A little bit of semantic highlighting for Jai
 - Settings per file type
-- Custom title bar
+- Custom title bar on Windows
 - Proper highlighting for C++
 - ...
 
@@ -25,21 +22,33 @@
 - [Current file watcher limitation] If you open a file in a large folder, the file watcher might scan the whole folder in order to watch for the changes to the file.
 
 
-# Main Git Branch
-
-+ ...
-
-
 # RELEASES ==================================================================
 
+# Version 0.1.11 (UNRELEASED)
 
-# Version 0.1.10 (Unreleased)
++ Linux: the "Open Projects Directory" command as well as shift-clicking files/directories in the "open file" dialogs (Ctrl+O, Ctrl+Shift+O, Ctrl+P) should now work.
+  By default the editor will try to auto-detect the prefered file manager using the XDG utilities.
+  In case the auto-detection fails you can manually set the commands to run via the "explorer_command" and "explorer_reveal_command" options in the "[[linux]]" section of the config file.
+  Example:
 
-+ New keyboard shortcut commands: `toggle_case_sensitive` & `toggle_whole_word`. These will work inside of a search. The default shortcuts are Alt+C/Alt+W on Windows/Linux and Cmd+Opt+C/Cmd+Opt+W on Mac. (Thanks hfr4!)
+    [[linux]]
+    # '%s' is replaced with the path of the file/directory to open
+    explorer_command:         konsole -e mc "%s"      # this command is used when opening a directory
+    explorer_reveal_command:  nautilus --select "%s"  # this command is used when highlighting a specific file in a directory
+
+
+# Version 0.1.10
+
++ Key chord support (thanks @arjenwitteveen): you can now bind a sequence of key combos to an action, e.g. `Ctrl-A Ctrl-K  <action_name>`
++ Case-sensitive and whole-word search toggles (use new commands `toggle_case_sensitive` & `toggle_whole_word` in the [search dialog] context). The default shortcuts are Alt+C/Alt+W on Windows/Linux and Cmd+Opt+C/Cmd+Opt+W on Mac. (Thanks @hfr4!)
 + Windows/Mac: You can now shift+click files/folders in dialog boxes to reveal them in Explorer. (Finder on Mac)
-+ Windows/Mac: New keyboard shortcut command: `open_entry_in_explorer`. This will, like the previous item, open a file selected in a dialog box in Explorer/Finder. The default shortcut is Shift+Enter.
-+ Mac: Keyboard shortcuts for editing text now match other applications even more by default.
-+ Mac: The app's icon was brightened.
++ Windows/Mac: New keyboard shortcut command: `open_entry_in_explorer`. This will, like the previous item, open a file selected in a dialog box in Explorer/Finder. The default shortcut is Shift+Enter
++ Mac: Keyboard shortcuts for editing text now match other applications even more by default
++ Mac: The app's icon was brightened
++ Basic C# syntax highlighing (thanks @audV)
++ New shortcut to center viewport on cursor: `center_viewport_on_cursor` (thanks @onelivesleft)
++ Basic editor history (thanks @onelivesleft). Use commands `move_to_previous_editor_history`/`move_to_next_editor_history` to go back to previous/next cursor position (Alt-Minus, Alt-Plus by default)
++ Duplicating an editor on the side will now duplicate cursors and viewport position (thanks @hfr4)
 
 
 # Version 0.1.9, 21 May 2023
