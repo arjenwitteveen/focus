@@ -254,6 +254,7 @@ main :: () {
                     case .unsaved_buffers_dialog;   handled = unsaved_buffers_dialog_handle_event(event);
                     case .confirm_overwrite_dialog; handled = confirm_overwrite_dialog_handle_event(event);
                     case .commands_dialog;          handled = commands_dialog_handle_event(event);
+                    case .select_language_dialog;   handled = select_language_dialog_handle_event(event);
                 }
             }
 
@@ -333,6 +334,8 @@ handle_common_editor_action :: (action: Action_Editors, placement: Editor_Placem
 
         case .move_to_previous_buffer;                          move_to_previous_editor_history(by_buffer = true);  return true;
         case .move_to_next_buffer;                              move_to_next_editor_history    (by_buffer = true);  return true;
+
+        case .show_select_language_dialog;                      show_select_language_dialog();                      return true;
 
         // TODO: search_in_buffer
         case .search_in_project;
@@ -703,6 +706,7 @@ active_global_widget: enum {
     open_project_dialog;
     unsaved_buffers_dialog;
     confirm_overwrite_dialog;
+    select_language_dialog;
 } = .editors;
 
 Project_Dir :: struct {
@@ -748,6 +752,7 @@ dont_ignore_next_window_resize := false;
 #load "widgets/commands.jai";
 #load "widgets/open_project.jai";
 #load "widgets/confirm_overwrite.jai";
+#load "widgets/select_language.jai";
 
 #load "langs/jai.jai";
 #load "langs/c.jai";

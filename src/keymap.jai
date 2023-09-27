@@ -325,6 +325,7 @@ ACTIONS_COMMON :: string.[
     "close_other_editor",
     "close_left_editor",
     "close_right_editor",
+    "show_select_language_dialog",
 
     "dump_key_mappings",
 ];

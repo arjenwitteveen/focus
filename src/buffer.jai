@@ -1180,20 +1180,7 @@ Buffer :: struct {
     cursors: [..] Cursor;  // cursor state before any current edits were made
     edit_notifications: [..] Edit_Notification;
 
-    lang: enum u8 {
-        Plain_Text :: 0;
-        Jai;
-        C;
-        CSharp;
-        Golang;
-        Focus_Config;
-        Glsl;
-        Worklog;
-        Python;
-        RenPy;
-        Xml;
-        Html;
-    } = .Plain_Text;
+    lang := Buffer_Language.Plain_Text;
 
     Edit_Group :: struct {
         edits: [] Edit;
@@ -1279,4 +1266,36 @@ Indentation_Token :: struct {
         bracket;
         brace;
     };
+}
+
+Buffer_Language :: enum u8 {
+    Plain_Text :: 0;
+    Jai;
+    C;
+    CSharp;
+    Golang;
+    Focus_Config;
+    Glsl;
+    Worklog;
+    Python;
+    RenPy;
+    Xml;
+    Html;
+}
+
+buffer_language_to_string :: (language: Buffer_Language) -> string {
+    if #complete language == {
+        case .Plain_Text;   return "Plain Text";
+        case .Jai;          return "Jai";
+        case .C;            return "C";
+        case .CSharp;       return "C#";
+        case .Golang;       return "Go";
+        case .Focus_Config; return "Focus Configuration";
+        case .Glsl;         return "GLSL";
+        case .Worklog;      return "Worklog";
+        case .Python;       return "Python";
+        case .RenPy;        return "Ren'Py";
+        case .Xml;          return "XML";
+        case .Html;         return "HTML";
+    }
 }

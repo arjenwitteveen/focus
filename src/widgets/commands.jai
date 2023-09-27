@@ -209,6 +209,8 @@ commands := #run Command.[
     .{ .toggle_fullscreen,                                  "Toggle Fullscreen",                  0, .None },
 
     .{ .autoindent_region,                                  "Autoindent Region",                  0, .Single },
+    
+    .{ .show_select_language_dialog,                        "Select Language",                    0, .Single },
 ];
 
 Command :: struct {
