@@ -46,14 +46,12 @@ platform_create_window :: inline () {
 }
 
 platform_maximize_window :: inline (window: Window_Type) {
-    // On macOS, we do not do this.
-    // Maximized (fullscreen) text editor windows on launch would feel jarring
-    // and out of place. It also comes with a cumbersome fullscreening animation.
+    NSWindow.toggleFullScreen(window, window);
 }
 
 platform_enable_drag_and_drop :: inline (window: Window_Type) {
-    types := NSArray(NSPasteboardType).arrayWithObject(NSPasteboardTypeFileURL);
-    NSView.registerForDraggedTypes(window, types);
+    // Currently crashes. Which is strange, because this same line seems to work fine in Codex Viewer.
+    // NSView.registerForDraggedTypes(window, NSArray(NSPasteboardType).arrayWithObject(NSPasteboardTypeFileURL));
 }
 
 platform_get_dpi_scale :: (window: Window_Type) -> float {

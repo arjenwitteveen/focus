@@ -1040,16 +1040,18 @@ set_lang_from_path :: (buffer: *Buffer, path: string) {
     if found_extension {
         if extension == {
             case "jai";            buffer.lang = .Jai;
-            case "focus-config";   buffer.lang = .Focus_Config;
             case "cs";             buffer.lang = .CSharp;
+            case "focus-config";   buffer.lang = .Focus_Config;
             case "go";             buffer.lang = .Golang;
+            case "odin";           buffer.lang = .Odin;
             case "py";             buffer.lang = .Python;
             case "rpy";            buffer.lang = .RenPy;
 
             case "vert"; #through;
             case "frag"; #through;
             case "geom"; #through;
-            case "tess"; #through;
+            case "tese"; #through;
+            case "tesc"; #through;
             case "glsl";
                 buffer.lang = .Glsl;
 
@@ -2847,6 +2849,7 @@ toggle_comment :: (editor: *Editor, buffer: *Buffer) {
         case .Golang;       comment = "//";
         case .Glsl;         comment = "//";
         case .Jai;          comment = "//";
+        case .Odin;         comment = "//";
         case .Focus_Config; comment = "#";
         case .Python;       comment = "#";
         case .RenPy;        comment = "#";
@@ -3014,6 +3017,9 @@ toggle_block_comment :: (editor: *Editor, buffer: *Buffer) {
         case .Golang;       comment_start = "/*"; comment_end = "*/";
         case .Glsl;         comment_start = "/*"; comment_end = "*/";
         case .Jai;          comment_start = "/*"; comment_end = "*/";
+        case .Odin;         comment_start = "/*"; comment_end = "*/";
+        case .Html;         comment_start = "<!--"; comment_end = "-->";
+        case .Xml;          comment_start = "<!--"; comment_end = "-->";
         case;               toggle_comment(editor, buffer); return;  // fallback to toggle_comment for the rest.
     }
 

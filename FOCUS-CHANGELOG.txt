@@ -39,10 +39,30 @@
     + New option: `draw_indent_guides`. Set to `true` to draw a vertical guide line at every indent level (determined by tab size)
     + Added support for regular expressions in file/project search
     + Basic Python syntax highlighting
-    + Added built-in 'save file' dialog for Linux and MacOS
+    + Added built-in 'save file' dialog for Linux and Mac
     + Dragging middle mouse button will create cursors (thanks @hfr4)
+    + Mac: You can now set `maximize_on_start` in your global config to `true`, and Focus will launch in fullscreen.
+    + Numpad keys can now be used in key mappings.
+      The editor now recognizes the following new key names:
+        Numpad0
+        Numpad1
+        Numpad2
+        Numpad3
+        Numpad4
+        Numpad5
+        Numpad6
+        Numpad7
+        Numpad8
+        Numpad9
+        NumpadMultiply
+        NumpadDivide
+        NumpadAdd
+        NumpadSubtract
+        NumpadDecimal
+        NumpadEnter
 
 + Bug fixes:
+    + Mac: Fixed intermittent crashing on launch
     + It should now be possible to scroll the viewport by dragging outside it in all cases (previously it wasn't always possible - see issue #101)
     + Duplicating a line near the end now duplicates a line as expected
     + Fixed a bug with multi-cursor copying/pasting when some of the cursors don't have a selection

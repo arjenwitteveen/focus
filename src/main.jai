@@ -81,8 +81,13 @@ main :: () {
     // This may generate window resize events if DPI/scaling settings need to be
     // applied, so make sure to only call it after the window is created.
     platform_apply_config(*config.platform);
-
-    if config.settings.maximize_on_start then platform_maximize_window(window);
+    
+    #if OS == .MACOS {
+        // On macOS, attempting to maximize the window before a frame has been drawn results in a crash, so we delay it until the end of the first frame.
+        should_maximize := config.settings.maximize_on_start;
+    } else {
+        if config.settings.maximize_on_start then platform_maximize_window(window);
+    }
 
     platform_enable_drag_and_drop(window);
 
@@ -287,6 +292,13 @@ main :: () {
         }
 
         reset_temporary_storage();
+        
+        #if OS == .MACOS {
+            if should_maximize {
+                should_maximize = false;
+                platform_maximize_window(window);
+            }
+        }
 
         // #if DEBUG FrameMark();
 
@@ -757,13 +769,14 @@ dont_ignore_next_window_resize := false;
 #load "langs/jai.jai";
 #load "langs/c.jai";
 #load "langs/csharp.jai";
-#load "langs/golang.jai";
 #load "langs/focus_config.jai";
 #load "langs/glsl.jai";
-#load "langs/worklog.jai";
+#load "langs/golang.jai";
+#load "langs/odin.jai";
 #load "langs/python.jai";
 #load "langs/renpy.jai";
 #load "langs/xml.jai";
+#load "langs/worklog.jai";
 
 #if OS == .WINDOWS {
     #load "platform/windows.jai";
