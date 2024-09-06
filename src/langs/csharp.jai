@@ -589,8 +589,8 @@ parse_interpolated_string_literal :: (using tokenizer: *CSharp_Tokenizer, token:
         while t < max_t && t.* != #char "\n" {
             // Escape for " in literal is \"
             // Escape for { in interpolated is {{
-            if !left_slash_seen && t.* == #char "\"" { quote_seen = true; break; }
             if left_brace_seen && t.* != #char "{" { t -= 2; break; }
+            if !left_slash_seen && t.* == #char "\"" { quote_seen = true; break; }
 
             left_slash_seen = !left_slash_seen && t.* == #char "\\";
             left_brace_seen = !left_brace_seen && t.* == #char "{";
