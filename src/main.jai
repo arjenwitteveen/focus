@@ -182,8 +182,9 @@ main :: () {
         Input.update_window_events();
 
         current_time := current_time_monotonic();
-        frame_dt   = cast(Time) min(to_float64_seconds(current_time - frame_time), MAX_FRAME_DT);
+        frame_dt   = min(to_float64_seconds(current_time - frame_time), MAX_FRAME_DT);
         frame_time = current_time;
+        frame_time64 = to_float64_seconds(frame_time);
 
         old_line_height = line_height;
         for Input.get_window_resizes() {
@@ -232,12 +233,10 @@ main :: () {
         num_text_input_events_to_ignore := 0;
 
         for event : Input.events_this_frame {
-            if should_quit break;  // don't process any other events we might have in this frame if the previous one set this to true
-
             // General events
             if event.type == {
                 case .QUIT;
-                    should_quit = true;
+                    defer_action_quit();
 
                 case .KEYBOARD;
                     // Double shift click
@@ -285,17 +284,18 @@ main :: () {
             // Note that the active widget may change during the frame, so the following events
             // will be sent to the new widget, that's why we check global widget for each event.
             if #complete active_global_widget == {
-                case .editors;                  handled = editors_handle_event(event);
-                case .finder;                   handled = finder_handle_event(event);
-                case .open_file_dialog;         handled = open_file_dialog_handle_event(event);
-                case .delete_file_dialog;       handled = delete_file_dialog_handle_event(event);
-                case .go_to_line_dialog;        handled = go_to_line_dialog_handle_event(event);
-                case .switch_to_project_dialog; handled = switch_to_project_dialog_handle_event(event);
-                case .unsaved_buffers_dialog;   handled = unsaved_buffers_dialog_handle_event(event);
-                case .confirm_overwrite_dialog; handled = confirm_overwrite_dialog_handle_event(event);
-                case .commands_dialog;          handled = commands_dialog_handle_event(event);
-                case .theme_dialog;             handled = theme_dialog_handle_event(event);
-                case .language_dialog;          handled = language_dialog_handle_event(event);
+                case .editors;                      handled = editors_handle_event(event);
+                case .finder;                       handled = finder_handle_event(event);
+                case .open_file_dialog;             handled = open_file_dialog_handle_event(event);
+                case .delete_file_dialog;           handled = dialog_handle_event(*delete_file_dialog, event);
+                case .go_to_line_dialog;            handled = go_to_line_dialog_handle_event(event);
+                case .switch_to_project_dialog;     handled = switch_to_project_dialog_handle_event(event);
+                case .unsaved_buffers_dialog;       handled = dialog_handle_event(*unsaved_buffers_dialog, event);
+                case .confirm_overwrite_dialog;     handled = dialog_handle_event(*confirm_overwrite_dialog, event);
+                case .commands_dialog;              handled = dialog_handle_event(*commands_dialog, event);
+                case .kill_running_command_dialog;  handled = dialog_handle_event(*kill_running_command_dialog, event);
+                case .theme_dialog;                 handled = theme_dialog_handle_event(event);
+                case .language_dialog;              handled = language_dialog_handle_event(event);
             }
 
             if !handled {
@@ -321,12 +321,7 @@ main :: () {
             key_sequence_input_process_event(event, handled);
         }
 
-        if should_quit && unsaved_buffers_exist() && !force_quit {
-            show_unsaved_buffers_dialog();
-            should_quit = false;
-        }
-
-        process_buffer_save_queue();
+        execute_deferred_actions();
 
         build_system_update();
         maybe_revert_temporary_theme();
@@ -336,16 +331,7 @@ main :: () {
 
         pointer_end_frame();
 
-        // TODO:
-        // maybe_save_editor_state_into_session();
-
         maybe_save_editor_history();
-
-        if should_reload_workspace {
-            reload_workspace();
-            should_reload_workspace = false;
-            redraw_requested = true;
-        }
 
         reset_temporary_storage();
 
@@ -360,7 +346,7 @@ main :: () {
 
         if should_quit break;
 
-        if cast(Time) to_float64_seconds(current_time_monotonic() - frame_time) <= QUICK_FRAME_DT {
+        if to_float64_seconds(current_time_monotonic() - frame_time) <= QUICK_FRAME_DT {
             // It should be ok to sleep a bit after a quick frame to avoid pegging the core.
             sleep_milliseconds(2);
         }
@@ -376,7 +362,7 @@ main :: () {
 
 handle_common_editor_action :: (action: Action_Editors, placement: Editor_Placement = .in_place) -> handled: bool {
     if action == {
-        case .quit;                                             should_quit = true;                                 return true;
+        case .quit;                                             defer_action_quit();                                return true;
 
         case .open_another_editor_instance;                     open_another_editor_instance();                     return true;
 
@@ -449,8 +435,7 @@ maybe_execute_a_build_command :: (action: Action_Build) -> handled: bool {
         if editor && buffer.has_file save_buffer(buffer, editor.buffer_id);
     }
 
-    command := ifx command_id > 0 then *config.build.commands[command_id-1] else *config.build.defaults;
-    execute_build_command(command);
+    defer_action_build_command(command_id);
 
     return true;
 }
@@ -719,17 +704,14 @@ dpi_scale := 1.0;
 fullscreen: bool;
 fullscreen_state: Saved_Window_Info;
 
-redraw_requested            := true;  // set to true to render the first frame
-should_quit                 := false;
-force_quit                  := false;
-should_reload_workspace     := false;
-automatic_workspace_reload  := false;
+redraw_requested := true;  // set to true to render the first frame
+should_quit      := false;
 
-frame_time: Apollo_Time;          // ever-increasing time since start in seconds
-frame_dt:   Time = MAX_FRAME_DT;  // time delta since the last frame
-MAX_FRAME_DT:   Time : xx (1.0 / 60);
-QUICK_FRAME_DT: Time : xx (1.0 / 300);  // sorry 300Hz monitor users
-// MAX_TIME_BEFORE_RESETTING: Time : xx (60 * 60 * 24 * 7);  // reset timer after a week to avoid losing timer precision
+frame_time:   Apollo_Time;          // ever-increasing time since start in seconds
+frame_time64: float64;              // for when we don't need as much precision
+frame_dt: float64 = MAX_FRAME_DT;   // time delta since the last frame
+MAX_FRAME_DT:   float64 : (1.0 / 60);
+QUICK_FRAME_DT: float64 : (1.0 / 300);  // sorry 300Hz monitor users
 
 EDIT_GROUP_TIMEOUT :: 0.3;  // for undo/redo
 
@@ -833,8 +815,6 @@ dont_ignore_next_window_resize := false;
 
 Mods :: Input.Event.Modifier_Flags;
 
-Time :: #type,isa float64;
-
 project_dirs:  [..] Project_Dir;
 project_files: [..] string;  // individual files added to project
 
@@ -850,6 +830,7 @@ Active_Global_Widget :: enum {
     switch_to_project_dialog;
     unsaved_buffers_dialog;
     confirm_overwrite_dialog;
+    kill_running_command_dialog;
     theme_dialog;
     language_dialog;
 }
@@ -889,6 +870,7 @@ cpu_info: Cpu_X86;
 focus_allocator: Allocator;
 
 
+#load "array.jai";
 #load "layout.jai";
 #load "editors.jai";
 #load "buffer.jai";
@@ -908,8 +890,10 @@ focus_allocator: Allocator;
 #load "projects.jai";
 #load "meow_hash.jai";
 #load "user_messages.jai";
+#load "deferred_actions.jai";
 
 #load "widgets/generic_choice_dialog.jai";
+#load "widgets/generic_confirm_dialog.jai";
 #load "widgets/text_input.jai";
 #load "widgets/open_file_dialog.jai";
 #load "widgets/delete_file_dialog.jai";
@@ -919,6 +903,7 @@ focus_allocator: Allocator;
 #load "widgets/commands.jai";
 #load "widgets/switch_to_project.jai";
 #load "widgets/confirm_overwrite.jai";
+#load "widgets/kill_running_command.jai";
 #load "widgets/theme_dialog.jai";
 #load "widgets/language_dialog.jai";
 #load "widgets/color_preview.jai";
@@ -947,6 +932,7 @@ focus_allocator: Allocator;
 #load "langs/uxntal.jai";
 #load "langs/rust.jai";
 #load "langs/markdown.jai";
+#load "langs/batch.jai";
 
 #if OS == .WINDOWS {
     #load "platform/windows.jai";
