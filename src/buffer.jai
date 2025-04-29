@@ -391,6 +391,33 @@ remove_crlf_in_place :: inline (str: *string) -> bytes_removed: s64 {
     return remove_crlf_in_place(cast(*[] u8) str);
 }
 
+remove_byte_order_mark_in_place :: inline (bytes: *[] u8) -> signature_length: s64 {
+    b := bytes.*;
+    signature_length := 0;
+
+    if b.count >= 3 && b[0] == 0xef && b[1] == 0xbb && b[2] == 0xbf { // UTF-8
+        signature_length = 3;
+    }
+
+    if signature_length > 0 {
+        focus_memcpy(bytes.data, bytes.data + signature_length, bytes.count - signature_length);
+        bytes.count -= signature_length;
+    }
+
+    return signature_length;
+}
+
+remove_byte_order_mark_in_place :: inline (array: *Array(u8)) -> signature_length: s64 {
+    bytes := to_view(array);
+    signature_length := remove_byte_order_mark_in_place(*bytes);
+    array.count = cast(s32) bytes.count;
+    return signature_length;
+}
+
+remove_byte_order_mark_in_place :: inline (str: *string) -> signature_length: s64 {
+    return remove_byte_order_mark_in_place(cast(*[] u8) str);
+}
+
 rescan_for_lines :: (using buffer: *Buffer) {
     lock(*buffer.content_lock);
     defer unlock(*buffer.content_lock);
@@ -1187,6 +1214,7 @@ find_or_create_buffer :: (path: string) -> buffer_id: s64, created: bool {
     lock(*buffer.content_lock);
     buffer.bytes = from_view(to_bytes(file_data));
     bytes_removed := remove_crlf_in_place(*buffer.bytes);
+    remove_byte_order_mark_in_place(*buffer.bytes);
     unlock(*buffer.content_lock);
 
     buffer.crlf = bytes_removed > 0;
@@ -1442,6 +1470,7 @@ reload_from_disk :: (buffer_id: s64, force := false, show_user_messages := false
     defer free(file_contents_str);
 
     bytes_removed := remove_crlf_in_place(*file_contents_str);
+    remove_byte_order_mark_in_place(*file_contents_str);
     file_hash := calculate_hash(cast([] u8) file_contents_str);
     if buffer.meow_hash == file_hash && !force return;
 
